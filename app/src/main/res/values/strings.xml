@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">C5DemoTest</string>
+
+    <string name="switch_on">on</string>
+    <string name="switch_off">off</string>
+    <string name="switch_silentUpdate">静默升级</string>
+    <string name="switch_statusBar">状态栏</string>
+    <string name="switch_NavigationBar">导航栏</string>
+    <string name="switch_nfc_log">读卡记录:\n</string>
+    <string name="switch_wake_up">定时休眠唤醒</string>
+
+    <string-array name="spinner_device">
+        <item>/dev/ttyS4</item>
+        <item>/dev/ttyS3</item>
+        <item>/dev/ttyUSB0</item>
+    </string-array>
+</resources>
