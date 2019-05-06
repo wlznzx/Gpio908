@@ -15,19 +15,25 @@ import android.os.Message;
 import android.provider.DocumentsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -51,11 +57,17 @@ public class MainActivity extends AppCompatActivity {
     private Intent serviceIntent;
     private NfcService.MyBinder binder;
 
+    private ListView cardList;
+
+    private CardListAdapter adapter;
+
     private ServiceConnection conn = new ServiceConnection() {
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             binder = (NfcService.MyBinder) service;
+            binder.startLoop(handler);
+            Log.d("wlDebug", "startLoop");
         }
 
         @Override
@@ -63,6 +75,8 @@ public class MainActivity extends AppCompatActivity {
             binder = null;
         }
     };
+
+    private String currentDate;
 
     Handler handler = new Handler() {
         @Override
@@ -72,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy年MM月dd日   HH:mm:ss");
                     Date curDate = new Date(System.currentTimeMillis());
                     String data = (String) msg.obj;
+                    currentDate = data;
                     if (data != null && data.length() > 0) {
                         textView_nfc.setText("[" + formatter.format(curDate) + "] : " + data);
                     }
@@ -105,6 +120,21 @@ public class MainActivity extends AppCompatActivity {
 
         editText = findViewById(R.id.editText);
         button = findViewById(R.id.button);
+        cardList = findViewById(R.id.card_list);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendCommand(v);
+            }
+        });
+
+        findViewById(R.id.clear_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearList();
+            }
+        });
 
         String path = Environment.getExternalStorageDirectory().getPath();
         Log.d("ginger", path);
@@ -174,14 +204,14 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("ginger", "开启NFC");
                     button.setEnabled(true);
                     spinner.setEnabled(false);
-                    if (binder != null)
-                        binder.startLoop(handler);
+                    // if (binder != null)
+                    // binder.startLoop(handler);
                 } else {
-                    button.setEnabled(false);
+                    // button.setEnabled(false);
                     spinner.setEnabled(true);
                     Log.d("ginger", "关闭NFC");
-                    if (binder != null)
-                        binder.endLoop();
+                    // if (binder != null)
+                    // binder.endLoop();
                 }
             }
         });
@@ -197,6 +227,11 @@ public class MainActivity extends AppCompatActivity {
                 flag = 0;
             }
         });
+
+        List<String> list = SharedPreferencesUtil.getListData(SharedPreferencesUtil.WHITE_LIST, String.class);
+
+        adapter = new CardListAdapter(list);
+        cardList.setAdapter(adapter);
     }
 
     /**
@@ -204,11 +239,37 @@ public class MainActivity extends AppCompatActivity {
      *
      * @param v
      */
-    public void sendCommand(View v){
+    public void sendCommand(View v) {
+        /*
         String command = editText.getText().toString();
         Log.d("Ginger", "command + " + command);
         binder.sendCommand(command);
         binder.getCommand();
+        */
+        List<String> list = SharedPreferencesUtil.getListData(SharedPreferencesUtil.WHITE_LIST, String.class);
+//        if(!list.contains("4312341234123412"))list.add("4312341234123412");
+//        if(!list.contains("adfadf023rasdfasd"))list.add("adfadf023rasdfasd");
+//        SharedPreferencesUtil.putListData(SharedPreferencesUtil.WHITE_LIST,list);
+//        list.add("4312341234123412");
+//        list.add("adfadf023rasdfasd");
+//        SharedPreferencesUtil.putListData(SharedPreferencesUtil.WHITE_LIST, list);
+//        adapter.setDatas(list);
+
+        if (currentDate != null && !currentDate.equals("") && !list.contains(currentDate)) {
+            list.add(currentDate);
+            SharedPreferencesUtil.putListData(SharedPreferencesUtil.WHITE_LIST, list);
+            Toast.makeText(MainActivity.this, "添加卡号:" + currentDate, Toast.LENGTH_SHORT).show();
+            adapter.setDatas(list);
+        }
+        for (String str : SharedPreferencesUtil.getListData(SharedPreferencesUtil.WHITE_LIST, String.class)) {
+            Log.d("wlDebug", "str = " + str);
+        }
+    }
+
+    private void clearList() {
+        SharedPreferencesUtil.putData(SharedPreferencesUtil.WHITE_LIST, "");
+        Toast.makeText(MainActivity.this, "清空所有已添加卡号.", Toast.LENGTH_SHORT).show();
+        adapter.setDatas(SharedPreferencesUtil.getListData(SharedPreferencesUtil.WHITE_LIST, String.class));
     }
 
     @Override
@@ -220,6 +281,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        binder.startLoop(null);
         unbindService(conn);
     }
 
@@ -288,5 +350,56 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+    }
+
+
+    class CardListAdapter extends BaseAdapter {
+
+        private List<String> datas;
+
+        public CardListAdapter(List<String> pDatas) {
+            datas = pDatas;
+            Log.d("wlDebug", "datas.size() = " + datas.size());
+        }
+
+        public void setDatas(List<String> pDatas) {
+            datas = pDatas;
+            this.notifyDataSetChanged();
+        }
+
+        @Override
+        public int getCount() {
+            return datas.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return datas.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ViewHolder viewHolder = null;
+            if (convertView == null) {
+                convertView = LayoutInflater.from(MainActivity.this).inflate(R.layout.listview_item, parent, false);
+                viewHolder = new ViewHolder();
+                viewHolder.mTextView = (TextView) convertView
+                        .findViewById(R.id.tv);
+                convertView.setTag(viewHolder);
+            } else {
+                viewHolder = (ViewHolder) convertView.getTag();
+            }
+            viewHolder.mTextView.setText(datas.get(position));
+            return convertView;
+        }
+
+        private final class ViewHolder {
+            TextView mTextView;
+        }
     }
 }

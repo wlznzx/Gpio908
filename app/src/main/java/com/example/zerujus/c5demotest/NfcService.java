@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
+import java.util.List;
 
 public class NfcService extends Service {
 
@@ -293,7 +294,8 @@ public class NfcService extends Service {
         }
 
         Log.d("wlDebug","read = " + hex);
-        if (hex.equals("fe0c0390002170145bd8819795da") || hex.equals("fe08030400c3b5021f6400000000")) {
+        List<String> list = SharedPreferencesUtil.getListData(SharedPreferencesUtil.WHITE_LIST, String.class);
+        if (list.contains(hex)) {
             doorHandler.sendEmptyMessage(1);
         }
     }

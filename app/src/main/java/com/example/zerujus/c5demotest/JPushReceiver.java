@@ -36,7 +36,7 @@ public class JPushReceiver extends BroadcastReceiver {
                 //send the Registration Id to your server...
             } else if (JPushInterface.ACTION_MESSAGE_RECEIVED.equals(intent.getAction())) {
                 Log.d(TAG, "[MyReceiver] 接收到推送下来的自定义消息: " + bundle.getString(JPushInterface.EXTRA_MESSAGE));
-                if(bundle.getString(JPushInterface.EXTRA_MESSAGE).equals("OPEN_DOOR")){
+                if (bundle.getString(JPushInterface.EXTRA_MESSAGE).equals("OPEN_DOOR")) {
                     context.sendBroadcast(new Intent("aqy.intent.action.OPEN_DOOR"));
                 }
                 processCustomMessage(context, bundle);
@@ -63,7 +63,7 @@ public class JPushReceiver extends BroadcastReceiver {
             } else if (JPushInterface.ACTION_CONNECTION_CHANGE.equals(intent.getAction())) {
                 boolean connected = intent.getBooleanExtra(JPushInterface.EXTRA_CONNECTION_CHANGE, false);
                 Log.w(TAG, "[MyReceiver]" + intent.getAction() + " connected state change to " + connected);
-                if(connected){
+                if (connected) {
 
                 }
             } else if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
